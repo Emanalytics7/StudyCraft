@@ -1,88 +1,70 @@
-from exa_py import Exa
-from groq import Groq
 import os
+import re
+from groq import Groq
+from exa_py import Exa
 
-exa = Exa(os.environ.get("EXA_API_KEY"))
-groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+exa = Exa(os.environ.get('EXA_API_KEY'))
+groq_client = Groq(api_key=os.environ.get('GROQ_API_KEY'))
 
-def search_engine(user_query):
-    results = exa.search(user_query, num_results=3)
-    return results
 
-def generate_content(preferences):
-    goal = preferences['goal']
-    duration = preferences['duration']
-    style = preferences['style']
-    
-    courses = search_engine(f"{goal} courses links")
-    tutorials = search_engine(f"{goal} tutorials links")
-    documentation = search_engine(f"{goal} documentation links ")
-    articles = search_engine(f"{goal} articles links")
-    projects = search_engine(f"{goal} capstone projects links")
+prompt_template = """
+You are an expert in designing comprehensive learning paths. Create a detailed learning path for the following goal:
 
-    template = """
-# {duration} {goal} Learning Schedule
+Goal: {goal} Time period {number}
 
-## Adapt this title according to the {duration}
-e.g (for weeks use week and for months use months etc.)
+The learning path should be structured as follows:
+1. Title
+2. Description
+3. Weekly/Daily Schedule
+    - Week/Day
+        - Topic Title
+        - Description
+        - Estimated Time
+        - Resources/Links
+4. Additional Resources
+5. Conclusion
 
-### Topics
-1. {topic1}: {description1}
-2. {topic2}: {description2}
-3. {topic3}: {description3}
-
-### Resources
-- ({resource_link1})
-- ({resource_link2})
-- ({resource_link3})
-
-### Practical Exercises
-- {exercise1}
-- {exercise2}
-- {exercise3}
-
-### Assessments
-- {assessment1}
-- {assessment2}
-- {assessment3}
-
----
+Ensure the content is detailed and well-structured. Provide links to external resources where necessary.
 """
 
-    prompt = f"""
-I want to become a {goal} within {duration} following a {style} learning approach. 
-Please create a comprehensive learning schedule to help me achieve this goal. 
-Break down the schedule into weekly segments, specifying the topics to be covered each week, the time to be spent on each topic, and the resources to be used. 
-Include a mix of theoretical learning, practical exercises, projects, and assessments. 
-Also, provide guidance on how to integrate these learning activities into daily study routines. 
+def create_prompt(goal, number):
+    return prompt_template.format(goal=goal, number=number)
 
-Use the following template:
 
-{template}
-
-User the following links with each related topic above from here: [Mandatory]
-{courses}\n{tutorials}\n{documentation}\n{articles}\n{projects}         
-
-Add two motivate quotes in the start and end.Avoid ('Here is your' sentence) Be straightforward and professional.
-"""
-
+def generate_learning_path(goal, number):
+    prompt = create_prompt(goal, number)
     response = groq_client.chat.completions.create(
         messages=[
             {
-                "role": "user",
-                "content": prompt
+               "role": "user",
+               "content": prompt 
             }
         ],
-        model="llama3-70b-8192"
+        model = 'llama3-70b-8192'
+        
     )
-
     return response.choices[0].message.content
 
-# # # Example usage
-# user_preferences = {
-#     'goal': 'Data Scientist',
-#     'duration': '12 weeks',
-#     'style': 'project based'
-# }
-# generated_content = generate_content(user_preferences)
-# print(generated_content)
+
+def fetch_response(topic):
+    response = exa.search(topic, num_results=3)
+    resources = []
+    for item in response.results:
+        resources.append({
+            "title": item.title,
+            "url": item.url,
+            "score": item.score,
+            "published_date": item.published_date,
+            "author": item.author
+        })
+    return resources
+
+def integrate_resources(learning_path):
+    for week in learning_path['schedule']:
+        for topic in week['topics']:
+            topic['resources'] = fetch_response(topic['url'])
+
+    return 
+
+
+print(generate_learning_path('Software engineer', '2 weeks'))
