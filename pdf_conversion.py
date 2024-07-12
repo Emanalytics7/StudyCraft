@@ -1,123 +1,126 @@
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
-from reportlab.lib import colors
-from reportlab.pdfgen import canvas
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 from reportlab.lib.units import inch
-from content_generation import generate_content
-from reportlab.lib.enums import TA_CENTER
+from reportlab.lib.colors import blue, grey, black
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfbase import pdfmetrics
+import re
+from content_generation import main
 
-# Define user preferences
-user_preferences = {
-    'goal': 'Data Scientist',
-    'duration': '12 weeks',
-    'style': 'structured and comprehensive'
-}
+class CustomDocTemplate(SimpleDocTemplate):
+    def __init__(self, *args, **kwargs):
+        SimpleDocTemplate.__init__(self, *args, **kwargs)
 
-# Generate learning schedule content
-generated_content = generate_content(user_preferences)
+    def afterPage(self):
+        self.canv.saveState()
+        self.canv.setFont('Helvetica', 9)
+        self.canv.setStrokeColor(grey)
+        self.canv.setLineWidth(0.5)
+        self.canv.line(inch, 0.75 * inch, 7.5 * inch, 0.75 * inch)
+        self.canv.drawString(4 * inch, 0.5 * inch, f"Page {self.canv.getPageNumber()}")
+        self.canv.restoreState()
 
-class PDFGenerator:
-    def __init__(self, filename):
-        self.filename = filename
-        self.doc = SimpleDocTemplate(filename, pagesize=letter)
-        self.styles = getSampleStyleSheet()
-        self.story = []
+def format_text(text):
+    text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', text)
+    text = re.sub(r'_(.*?)_', r'<i>\1</i>', text)
+    text = re.sub(r'(https?://\S+)', r'<link href="\1"><font color="blue"><u>\1</u></font></link>', text)
+    return text
 
-    def header_footer(self, canvas, doc):
-        # Header
-        canvas.saveState()
-        canvas.setFont('Helvetica-Bold', 10)
-        canvas.drawString(inch, 11 * inch, "Learning Schedule")
+def parse_content(content):
+    if content is None:
+        raise ValueError("Content is None. Please ensure the 'main' function returns valid content.")
+    
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'Title',
+        parent=styles['Heading1'],
+        fontSize=18,
+        alignment=1,
+        spaceAfter=24
+    )
+    heading_style = ParagraphStyle(
+        'Heading2',
+        parent=styles['Heading2'],
+        fontSize=14,
+        alignment=1,
+        spaceBefore=24,
+        spaceAfter=12
+    )
+    normal_style = ParagraphStyle(
+        'Normal',
+        parent=styles['BodyText'],
+        fontSize=10,
+        alignment=1,
+        spaceBefore=6,
+        spaceAfter=6
+    )
+    quote_style = ParagraphStyle(
+        'Quote',
+        parent=styles['BodyText'],
+        fontSize=10,
+        alignment=1,
+        spaceBefore=24,
+        spaceAfter=24,
+        italic=True
+    )
+
+    story = []
+    weekly_plan = []
+    current_week = None
+
+    lines = content.split('\n')
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
         
-        # Footer
-        canvas.setFont('Helvetica', 10)
-        page_num = canvas.getPageNumber()
-        text = f"Page {page_num}"
-        canvas.drawRightString(7.5 * inch, 0.75 * inch, text)
-        canvas.restoreState()
+        formatted_line = format_text(line)
+        
+        if line.startswith("Learning Schedule for:"):
+            story.append(Paragraph(formatted_line, title_style))
+        elif line.lower().startswith(("duration", "learning style")):
+            story.append(Paragraph(formatted_line, normal_style))
+        elif line == "Weekly Plan**:":
+            story.append(Paragraph("Weekly Plan", heading_style))
+        elif line.startswith("Week"):
+            if current_week:
+                weekly_plan.append(current_week)
+            current_week = [Paragraph(f"<b>{formatted_line}</b>", normal_style)]
+        elif line.startswith("Day"):
+            if current_week:
+                current_week.append(Paragraph(formatted_line, normal_style))
+        elif line == "Resource Links":
+            if current_week:
+                weekly_plan.append(current_week)
+            story.append(Paragraph("Weekly Plan", heading_style))
+            table = Table(weekly_plan, colWidths=[2*inch, 4*inch])
+            table.setStyle(TableStyle([
+                ('VALIGN', (0,0), (-1,-1), 'TOP'),
+                ('GRID', (0,0), (-1,-1), 0.5, grey),
+                ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+            ]))
+            story.append(table)
+            story.append(Spacer(1, 24))
+            story.append(Paragraph("Resource Links", heading_style))
+        elif line.startswith("http"):
+            story.append(Paragraph(formatted_line, normal_style))
+        elif line.startswith('"') and line.endswith('"'):
+            story.append(Paragraph(formatted_line, quote_style))
+        else:
+            story.append(Paragraph(formatted_line, normal_style))
 
-    def add_content(self, content):
-        title_style = ParagraphStyle(
-            'TitleStyle',
-            parent=self.styles['Title'],
-            fontSize=18,
-            alignment=TA_CENTER,
-            spaceAfter=20
-        )
-        heading_style = ParagraphStyle(
-            'HeadingStyle',
-            parent=self.styles['Heading1'],
-            fontSize=14,
-            textColor=colors.darkblue,
-            spaceAfter=10,
-            bold=True
-        )
-        subheading_style = ParagraphStyle(
-            'SubHeadingStyle',
-            parent=self.styles['Heading2'],
-            fontSize=12,
-            textColor=colors.black,
-            spaceAfter=8
-        )
-        link_style = ParagraphStyle(
-            'LinkStyle',
-            parent=self.styles['Normal'],
-            textColor=colors.blue,
-            underline=True,
-            spaceAfter=5
-        )
-        normal_style = self.styles['Normal']
-        quote_style = ParagraphStyle(
-            'QuoteStyle',
-            parent=self.styles['Normal'],
-            fontSize=12,
-            textColor=colors.grey,
-            italic=True,
-            spaceAfter=15,
-            leftIndent=20,
-            rightIndent=20
-        )
+    return story
 
-        # Add the title
-        self.story.append(Paragraph("Learning Schedule", title_style))
-        self.story.append(Spacer(1, 0.2 * inch))
+def create_pdf(file_path, content):
+    doc = CustomDocTemplate(file_path, pagesize=letter,
+                            leftMargin=inch, rightMargin=inch,
+                            topMargin=inch, bottomMargin=inch)
+    story = parse_content(content)
+    doc.build(story)
 
-        lines = content.split('\n')
-        for line in lines:
-            line = line.strip()
-            if line.startswith("#") and not line.startswith("##"):
-                # Motivational quotes
-                self.story.append(Paragraph(line[1:].strip(), quote_style))
-                self.story.append(Spacer(1, 0.2 * inch))
-            elif line.startswith("##"):
-                # Start a new page for each duration and add bold headings
-                if len(self.story) > 1:
-                    self.story.append(PageBreak())
-                self.story.append(Paragraph(line[2:].strip(), heading_style))
-                self.story.append(Spacer(1, 0.2 * inch))
-            elif line.startswith("### "):
-                # Sub-headings
-                self.story.append(Paragraph(line[3:].strip(), subheading_style))
-                self.story.append(Spacer(1, 0.1 * inch))
-            elif "- (" in line and ")" in line:
-                # Links
-                self.story.append(Paragraph(line, link_style))
-                self.story.append(Spacer(1, 0.1 * inch))
-            elif line.startswith("1.") or line.startswith("2.") or line.startswith("3.") or line.startswith("- "):
-                # Topics, Exercises, and Assessments
-                self.story.append(Paragraph(line, normal_style))
-                self.story.append(Spacer(1, 0.1 * inch))
-            else:
-                # Normal text
-                self.story.append(Paragraph(line, normal_style))
-                self.story.append(Spacer(1, 0.1 * inch))
-
-    def build_pdf(self):
-        self.doc.build(self.story, onFirstPage=self.header_footer, onLaterPages=self.header_footer)
-
-# Create PDF with learning schedule
-pdf_filename = 'learning_schedule.pdf'
-pdf = PDFGenerator(pdf_filename)
-pdf.add_content(generated_content)
-pdf.build_pdf()
+# Use this function in your main script
+if __name__ == "__main__":
+    content = main()
+    create_pdf("weekly_plan.pdf", content)
