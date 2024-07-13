@@ -1,126 +1,132 @@
 from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Frame, PageTemplate
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.enums import TA_JUSTIFY, TA_LEFT, TA_CENTER, TA_RIGHT
 from reportlab.lib.units import inch
-from reportlab.lib.colors import blue, grey, black
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfbase import pdfmetrics
-import re
+from reportlab.pdfgen import canvas
 from content_generation import main
 
-class CustomDocTemplate(SimpleDocTemplate):
-    def __init__(self, *args, **kwargs):
-        SimpleDocTemplate.__init__(self, *args, **kwargs)
+class ProfessionalPDFCreator:
+    def __init__(self, content, output_filename, title):
+        self.content = content
+        self.output_filename = output_filename
+        self.title = title
+        self.doc = SimpleDocTemplate(output_filename, pagesize=letter,
+                                     rightMargin=72, leftMargin=72,
+                                     topMargin=72, bottomMargin=72)
+        self.styles = getSampleStyleSheet()
+        self.add_custom_styles()
 
-    def afterPage(self):
-        self.canv.saveState()
-        self.canv.setFont('Helvetica', 9)
-        self.canv.setStrokeColor(grey)
-        self.canv.setLineWidth(0.5)
-        self.canv.line(inch, 0.75 * inch, 7.5 * inch, 0.75 * inch)
-        self.canv.drawString(4 * inch, 0.5 * inch, f"Page {self.canv.getPageNumber()}")
-        self.canv.restoreState()
+    def add_custom_styles(self):
+        self.styles['Normal'].alignment = TA_JUSTIFY
+        self.styles['Title'].fontSize = 24
+        self.styles['Title'].fontName = 'Helvetica-Bold'
+        self.styles['Title'].spaceAfter = 12
+        self.styles['Title'].alignment = TA_CENTER
 
-def format_text(text):
-    text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', text)
-    text = re.sub(r'_(.*?)_', r'<i>\1</i>', text)
-    text = re.sub(r'(https?://\S+)', r'<link href="\1"><font color="blue"><u>\1</u></font></link>', text)
-    return text
+        styles_to_add = {
+            'Heading1': {'fontSize': 18, 'fontName': 'Helvetica-Bold', 'spaceAfter': 6},
+            'Heading2': {'fontSize': 16, 'fontName': 'Helvetica-Bold', 'spaceAfter': 6},
+            'Heading3': {'fontSize': 14, 'fontName': 'Helvetica-Bold', 'spaceAfter': 6},
+            'BulletPoint': {'fontSize': 12, 'fontName': 'Helvetica', 'leftIndent': 20, 'spaceAfter': 3},
+            'Justify': {'alignment': TA_JUSTIFY, 'fontSize': 12, 'fontName': 'Helvetica'}
+            }
 
-def parse_content(content):
-    if content is None:
-        raise ValueError("Content is None. Please ensure the 'main' function returns valid content.")
-    
-    styles = getSampleStyleSheet()
-    
-    title_style = ParagraphStyle(
-        'Title',
-        parent=styles['Heading1'],
-        fontSize=18,
-        alignment=1,
-        spaceAfter=24
-    )
-    heading_style = ParagraphStyle(
-        'Heading2',
-        parent=styles['Heading2'],
-        fontSize=14,
-        alignment=1,
-        spaceBefore=24,
-        spaceAfter=12
-    )
-    normal_style = ParagraphStyle(
-        'Normal',
-        parent=styles['BodyText'],
-        fontSize=10,
-        alignment=1,
-        spaceBefore=6,
-        spaceAfter=6
-    )
-    quote_style = ParagraphStyle(
-        'Quote',
-        parent=styles['BodyText'],
-        fontSize=10,
-        alignment=1,
-        spaceBefore=24,
-        spaceAfter=24,
-        italic=True
-    )
+        for style_name, style_attributes in styles_to_add.items():
+            try:
+                self.styles.add(ParagraphStyle(name=style_name, **style_attributes))
+            except KeyError:
+                for attr, value in style_attributes.items():
+                    setattr(self.styles[style_name], attr, value)
 
-    story = []
-    weekly_plan = []
-    current_week = None
+    def create_pdf(self):
+        story = []
+        sections = self.content.split('\n\n')
+        for section in sections:
+            lines = section.split('\n')
+            if lines[0].startswith('**'):
+                # Section title
+                story.append(Paragraph(lines[0].strip('*'), self.styles['Heading1']))
+                story.append(Spacer(1, 12))
+                self.process_subsection(story, lines[1:])
+            else:
+                self.process_subsection(story, lines)
+            
+            story.append(Spacer(1, 12))
 
-    lines = content.split('\n')
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
+        self.doc.build(story, onFirstPage=self.add_page_number, onLaterPages=self.add_page_number)
+
+    def process_subsection(self, story, lines):
+        current_list = []
+        in_list = False
+
+        for line in lines:
+            line = line.strip()
+            if not line:
+                if in_list:
+                    story.append(self.create_table(current_list))
+                    current_list = []
+                    in_list = False
+                story.append(Spacer(1, 6))
+            elif line.startswith('**'):
+                if in_list:
+                    story.append(self.create_table(current_list))
+                    current_list = []
+                    in_list = False
+                story.append(Paragraph(line.strip('*'), self.styles['Heading2']))
+            elif line.startswith('*') or line.startswith('+') or line.startswith('-'):
+                in_list = True
+                current_list.append(line)
+            else:
+                if in_list:
+                    story.append(self.create_table(current_list))
+                    current_list = []
+                    in_list = False
+                story.append(Paragraph(line, self.styles['Justify']))
+
+        if current_list:
+            story.append(self.create_table(current_list))
+
+    def create_table(self, lines):
+        data = []
+        for line in lines:
+            if line.startswith('* '):
+                data.append([Paragraph('•', self.styles['BulletPoint']), Paragraph(line[2:], self.styles['Normal'])])
+            elif line.startswith('  + ') or line.startswith('  - '):
+                data.append(['', Paragraph('○ ' + line[4:], self.styles['BulletPoint'])])
         
-        formatted_line = format_text(line)
-        
-        if line.startswith("Learning Schedule for:"):
-            story.append(Paragraph(formatted_line, title_style))
-        elif line.lower().startswith(("duration", "learning style")):
-            story.append(Paragraph(formatted_line, normal_style))
-        elif line == "Weekly Plan**:":
-            story.append(Paragraph("Weekly Plan", heading_style))
-        elif line.startswith("Week"):
-            if current_week:
-                weekly_plan.append(current_week)
-            current_week = [Paragraph(f"<b>{formatted_line}</b>", normal_style)]
-        elif line.startswith("Day"):
-            if current_week:
-                current_week.append(Paragraph(formatted_line, normal_style))
-        elif line == "Resource Links":
-            if current_week:
-                weekly_plan.append(current_week)
-            story.append(Paragraph("Weekly Plan", heading_style))
-            table = Table(weekly_plan, colWidths=[2*inch, 4*inch])
-            table.setStyle(TableStyle([
-                ('VALIGN', (0,0), (-1,-1), 'TOP'),
-                ('GRID', (0,0), (-1,-1), 0.5, grey),
-                ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-            ]))
-            story.append(table)
-            story.append(Spacer(1, 24))
-            story.append(Paragraph("Resource Links", heading_style))
-        elif line.startswith("http"):
-            story.append(Paragraph(formatted_line, normal_style))
-        elif line.startswith('"') and line.endswith('"'):
-            story.append(Paragraph(formatted_line, quote_style))
-        else:
-            story.append(Paragraph(formatted_line, normal_style))
+        table = Table(data, colWidths=[0.2*inch, 5.3*inch])
+        table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+        ]))
+        return table
 
-    return story
+    def add_page_number(self, canvas, doc):
+        page_num = canvas.getPageNumber()
+        text = f"Page {page_num}"
+        canvas.saveState()
+        canvas.setFont('Helvetica', 9)
+        canvas.drawString(letter[0]-72, 0.75 * inch, text)
+        canvas.restoreState()
 
-def create_pdf(file_path, content):
-    doc = CustomDocTemplate(file_path, pagesize=letter,
-                            leftMargin=inch, rightMargin=inch,
-                            topMargin=inch, bottomMargin=inch)
-    story = parse_content(content)
-    doc.build(story)
+        # Add header
+        canvas.saveState()
+        canvas.setFont('Helvetica-Bold', 12)
+        canvas.drawString(72, letter[1] - 36, self.title)
+        canvas.restoreState()
 
-# Use this function in your main script
-if __name__ == "__main__":
-    content = main()
-    create_pdf("weekly_plan.pdf", content)
+        # Add footer
+        canvas.saveState()
+        canvas.setFont('Helvetica', 9)
+        canvas.drawString(72, 0.75 * inch, "Learning Plan")
+        canvas.restoreState()
+
+# Your content here (the result of the LLM output based on your template)
+content = main()
+
+pdf_creator = ProfessionalPDFCreator(content, 'learning_plan.pdf', "Data Science Learning Plan")
+pdf_creator.create_pdf()
