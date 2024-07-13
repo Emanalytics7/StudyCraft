@@ -7,6 +7,19 @@ from datetime import datetime, timedelta
 exa = Exa(os.environ.get('EXA_API_KEY'))
 groq_client = Groq(api_key=os.environ.get('GROQ_API_KEY'))
 
+def fetch_response(topic):
+    response = exa.search(topic, num_results=3)
+    resources = []
+    for item in response.results:
+        resources.append({
+            "title": item.title,
+            "url": item.url,
+            "score": item.score,
+            "published_date": item.published_date,
+            "author": item.author
+        })
+    return resources
+
 def generate_content(prompt, model='llama3-70b-8192'):
     """Generate content using the LLM."""
     response = groq_client.chat.completions.create(
@@ -25,16 +38,17 @@ def get_user_inputs():
 def create_learning_schedule(goal, duration, style):
     """Create a detailed learning schedule based on user inputs."""    
     prompt = f"""
-    Dont start with heres is a .. 
-[Insert a relevant, motivational quote here that relates to learning or the specific goal, considering the {duration}-month journey]
+    Dont add heres your...
 
-**Learning Schedule for: {goal}
+**Learning Schedule for: {goal}**
 
-**Duration**: {duration}
+**Duration**: {duration} months
 **Learning Style**: {style}
 
+    [Insert a relevant, motivational quote here that relates to learning or the specific goal, considering the {duration}-month journey]
 
-**Comprehensive Learning Plan**:
+
+**Here you go! Enjoy :)**:
 
 [Generate a detailed plan divided into {duration} equal parts, each representing a month. For each month, provide the following structure:]
 
@@ -43,12 +57,10 @@ Month [1-{duration}]:
 * Week 1:
   + Main topics to cover:
   + Practical exercises:
-  + Resources urls:
 
 * Week 2:
   + Main topics to cover:
   + Practical exercises:
-  + Resources urls:
 
 * Monthly Project:
   - Description:
@@ -81,33 +93,54 @@ Month [1-{duration}]:
 * Key performance indicators:
 * Final project or exam details:
 
-**Resources:**
-[just urls]
-
 **Additional Tips**:
 * Time management strategies for a {duration}-month learning period:
 * Recommended pace and intensity based on the {duration}-month duration:
 * Strategies for maintaining motivation over {duration} months:
 
 [Insert a relevant, motivational quote here that relates to learning or the specific goal, considering the {duration}-month journey]
-
 """
     schedule = generate_content(prompt)
+    return schedule
+
+def extract_topics(schedule):
+    """Extract main topics from the generated learning schedule."""
+    topics = []
+    for line in schedule.split('\n'):
+        if "Main topics to cover" in line or "Topic" in line:
+            topic = line.split(":")[-1].strip()
+            if topic:  # Ensure the topic is not empty
+                topics.append(topic)
+    return topics
+
+def resources(schedule, topics):
+    """Fetch relevant resources for the extracted topics."""
+    all_resources = []
+    for topic in topics:
+        fetched_resources = fetch_response(topic)
+        if fetched_resources:
+            for resource in fetched_resources:
+                all_resources.append(f"{resource['url']}")
+    
+    # Flatten the list of resources and join them to the schedule
+    schedule = f"{schedule}\n\n**Additional Resources**\n" + "\n".join(all_resources)
     return schedule
 
 def display_learning_schedule(schedule):
     """Display the generated learning schedule."""
     print(schedule)
 
-
 def main():
     """Main function to orchestrate the learning schedule generation."""
     goal, duration, style = get_user_inputs()
-        
+    
     schedule = create_learning_schedule(goal, duration, style)
     
+    topics = extract_topics(schedule)
+    schedule = resources(schedule, topics)
+
     display_learning_schedule(schedule)
     return schedule
 
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    main()

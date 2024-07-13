@@ -1,13 +1,12 @@
-import re
-from reportlab.pdfgen import canvas
-from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfbase import pdfmetrics
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
+from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.colors import blue
+import re
 from content_generation import main
 
-# Register fonts
 pdfmetrics.registerFont(TTFont('Regular', 'AnonymousPro-Regular.ttf'))
 pdfmetrics.registerFont(TTFont('Bold', 'AnonymousPro-Bold.ttf'))
 pdfmetrics.registerFont(TTFont('Italic', 'AnonymousPro-Italic.ttf'))
@@ -34,8 +33,8 @@ class PDFDocument:
                     yield match.group()[2:-2], 'Bold'
                 elif match.group().startswith('*'):
                     yield match.group()[1:-1], 'Italic'
-                elif match.group().startswith('http'):
-                    yield match.group(), 'Italic'
+                elif match.group().startswith('https'):
+                    yield match.group(), 'link'
                 cursor = match.end()
             if cursor < len(text):
                 yield text[cursor:], 'Regular'
@@ -46,18 +45,33 @@ class PDFDocument:
         for chunk, style in get_chunks(text):
             self.canvas.setFont(style, size)
             if style == 'link':
-                self.canvas.setFont('Italic', size)
                 self.canvas.setFillColor(blue)
-            else:
-                self.canvas.setFont(style, size)
-                self.canvas.setFillColor('black')
+                self.canvas.setFont('Italic', size)
             
             words = chunk.split()
             for word in words:
                 word_width = self.canvas.stringWidth(word, self.canvas._fontname, size)
                 if cursor_x + word_width > x + line_width:
-                    cursor_y -= line_height
-                    cursor_x = x + indent
+                    # If the word is too long, break it
+                    if word_width > line_width:
+                        while word:
+                            for i in range(len(word), 0, -1):
+                                part = word[:i]
+                                part_width = self.canvas.stringWidth(part, self.canvas._fontname, size)
+                                if part_width <= line_width:
+                                    if cursor_x + part_width > x + line_width:
+                                        cursor_y -= line_height
+                                        cursor_x = x + indent
+                                    self.canvas.drawString(cursor_x, cursor_y, part)
+                                    cursor_x += part_width
+                                    word = word[i:]
+                                    break
+                            if cursor_x > x + line_width:
+                                cursor_y -= line_height
+                                cursor_x = x + indent
+                    else:
+                        cursor_y -= line_height
+                        cursor_x = x + indent
                 self.canvas.drawString(cursor_x, cursor_y, word)
                 cursor_x += word_width + self.canvas.stringWidth(' ', self.canvas._fontname, size)
             
