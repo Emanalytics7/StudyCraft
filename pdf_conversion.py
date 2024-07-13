@@ -69,7 +69,7 @@ class ProfessionalPDFCreator:
                     current_list = []
                     in_list = False
                 story.append(Spacer(1, 6))
-            elif line.startswith('**'):
+            elif line.startswith('**') and line.endswith('**:'):
                 if in_list:
                     story.append(self.create_table(current_list))
                     current_list = []
@@ -93,7 +93,7 @@ class ProfessionalPDFCreator:
         for line in lines:
             if line.startswith('* '):
                 data.append([Paragraph('•', self.styles['BulletPoint']), Paragraph(line[2:], self.styles['Normal'])])
-            elif line.startswith('  + ') or line.startswith('  - '):
+            elif line.startswith('+') or line.startswith('-'):
                 data.append(['', Paragraph('○ ' + line[4:], self.styles['BulletPoint'])])
         
         table = Table(data, colWidths=[0.2*inch, 5.3*inch])
