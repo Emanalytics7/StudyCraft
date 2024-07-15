@@ -3,10 +3,11 @@ from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.lib.colors import blue
+from reportlab.lib.colors import blue, black, gray
 import re
 from content_generation import main
 
+# Register custom fonts
 pdfmetrics.registerFont(TTFont('Regular', 'AnonymousPro-Regular.ttf'))
 pdfmetrics.registerFont(TTFont('Bold', 'AnonymousPro-Bold.ttf'))
 pdfmetrics.registerFont(TTFont('Italic', 'AnonymousPro-Italic.ttf'))
@@ -28,31 +29,28 @@ class PDFDocument:
             cursor = 0
             for match in re.finditer('|'.join(patterns), text):
                 if cursor < match.start():
-                    yield text[cursor:match.start()], 'Regular'
+                    yield text[cursor:match.start()], 'Regular', black
                 if match.group().startswith('**'):
-                    yield match.group()[2:-2], 'Bold'
-                elif match.group().startswith('*'):
-                    yield match.group()[1:-1], 'Italic'
-                elif match.group().startswith('https'):
-                    yield match.group(), 'link'
+                    yield match.group()[2:-2], 'Bold', black
+                elif match.group().startswith('*') and not match.group().startswith('**'):
+                    yield match.group()[1:-1], black
+                elif re.match(r'https?://', match.group()):
+                    yield match.group(), 'Italic', blue
                 cursor = match.end()
             if cursor < len(text):
-                yield text[cursor:], 'Regular'
-        
+                yield text[cursor:], 'Regular', black
+
         cursor_x = x + indent
         cursor_y = y
         line_width = self.width - 2 * inch - indent
-        for chunk, style in get_chunks(text):
+        for chunk, style, color in get_chunks(text):
             self.canvas.setFont(style, size)
-            if style == 'link':
-                self.canvas.setFillColor(blue)
-                self.canvas.setFont('Italic', size)
+            self.canvas.setFillColor(color)
             
             words = chunk.split()
             for word in words:
                 word_width = self.canvas.stringWidth(word, self.canvas._fontname, size)
                 if cursor_x + word_width > x + line_width:
-                    # If the word is too long, break it
                     if word_width > line_width:
                         while word:
                             for i in range(len(word), 0, -1):
@@ -75,7 +73,7 @@ class PDFDocument:
                 self.canvas.drawString(cursor_x, cursor_y, word)
                 cursor_x += word_width + self.canvas.stringWidth(' ', self.canvas._fontname, size)
             
-            self.canvas.setFillColor('black')
+            self.canvas.setFillColor(black)
 
         return x, cursor_y - line_height
 
@@ -116,8 +114,6 @@ class PDFDocument:
             elif section.startswith("  + ") or section.startswith("  - "):
                 section = f"{bullet} {section[4:]}"
                 _, y = self.draw_text(section, inch, y, 12, 14, 20)
-            elif section.startswith("> "):
-                _, y = self.draw_text(section, inch, y, 12, 14, 10)
             else:
                 _, y = self.draw_text(f"**{section}**", inch, y)
 

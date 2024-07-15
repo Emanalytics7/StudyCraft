@@ -1,14 +1,13 @@
 import os
 from groq import Groq
 from exa_py import Exa
-from datetime import datetime, timedelta
 
 # Initialize API clients
 exa = Exa(os.environ.get('EXA_API_KEY'))
 groq_client = Groq(api_key=os.environ.get('GROQ_API_KEY'))
 
 def fetch_response(topic):
-    response = exa.search(topic, num_results=3)
+    response = exa.search(topic, num_results=1)
     resources = []
     for item in response.results:
         resources.append({
@@ -38,44 +37,47 @@ def get_user_inputs():
 def create_learning_schedule(goal, duration, style):
     """Create a detailed learning schedule based on user inputs."""    
     prompt = f"""
-    Dont add heres your...
+Dont write Heres is...
 
-**Learning Schedule for: {goal}**
-
+**Learning Schedule for**: {goal}
 **Duration**: {duration} months
 **Learning Style**: {style}
 
     [Insert a relevant, motivational quote here that relates to learning or the specific goal, considering the {duration}-month journey]
 
 
-**Here you go! Enjoy :)**:
-
 [Generate a detailed plan divided into {duration} equal parts, each representing a month. For each month, provide the following structure:]
 
 Month [1-{duration}]:
 
 * Week 1:
+
   + Main topics to cover:
   + Practical exercises:
 
 * Week 2:
+
   + Main topics to cover:
   + Practical exercises:
 
 * Monthly Project:
+
   - Description:
   - Skills applied:
   - Estimated time:
 
 * Monthly milestone:
+
 * Self-assessment task:
 
-[Repeat the above structure for each month in the {duration}-month period]
+[Repeat the above structure for each week in the {duration}-month period]
 
 **Key Milestones**:
+
 [List 3-5 major milestones spread across the {duration}-month period]
 
 **Advanced Topics (for latter part of the learning period):
+
 * Topic 1:
   + Subtopics:
   + Resources:
@@ -84,21 +86,23 @@ Month [1-{duration}]:
   + Resources:
 
 **Community and Support**:
+
 * Recommended forums or communities:
 * Potential mentorship opportunities:
 * Study group suggestions:
 
 **Assessment and Evaluation**:
+
 * Suggested methods for tracking progress:
 * Key performance indicators:
 * Final project or exam details:
 
 **Additional Tips**:
+
 * Time management strategies for a {duration}-month learning period:
 * Recommended pace and intensity based on the {duration}-month duration:
 * Strategies for maintaining motivation over {duration} months:
 
-[Insert a relevant, motivational quote here that relates to learning or the specific goal, considering the {duration}-month journey]
 """
     schedule = generate_content(prompt)
     return schedule
@@ -109,7 +113,7 @@ def extract_topics(schedule):
     for line in schedule.split('\n'):
         if "Main topics to cover" in line or "Topic" in line:
             topic = line.split(":")[-1].strip()
-            if topic:  # Ensure the topic is not empty
+            if topic:  
                 topics.append(topic)
     return topics
 
@@ -117,13 +121,14 @@ def resources(schedule, topics):
     """Fetch relevant resources for the extracted topics."""
     all_resources = []
     for topic in topics:
-        fetched_resources = fetch_response(topic)
+        fetched_resources = fetch_response(f" Give some latest resources related to {topic}")
         if fetched_resources:
             for resource in fetched_resources:
-                all_resources.append(f"{resource['url']}")
+                all_resources.append(f"* {resource['url']}")
     
     # Flatten the list of resources and join them to the schedule
-    schedule = f"{schedule}\n\n**Additional Resources**\n" + "\n".join(all_resources)
+    motivation = 'Be brave enough to find the life you want and courageous enough to chase it. Then start over and love yourself the way you were always meant to!'
+    schedule = f"{schedule}\n\n**Additional Resources**\n\n" + "\n".join(all_resources) + "\n\n" + motivation
     return schedule
 
 def display_learning_schedule(schedule):
