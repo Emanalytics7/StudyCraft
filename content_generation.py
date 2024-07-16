@@ -2,6 +2,9 @@ import os
 from groq import Groq
 from exa_py import Exa
 
+class APIError(Exception):
+    pass
+
 class LearningScheduler:
     def __init__(self, exa_key, groq_key, prompt_file):
         self.exa = Exa(exa_key)
@@ -13,8 +16,7 @@ class LearningScheduler:
             with open(prompt_file, 'r') as file:
                 return file.read()
         except Exception as e:
-            print(f"Error loading prompt template: {e}")
-            return ""
+            raise APIError(f"Error loading prompt template: {e}")
 
     def fetch_resources(self, topic):
         try:
@@ -30,8 +32,7 @@ class LearningScheduler:
                 })
             return resources
         except Exception as e:
-            print(f"Error fetching resources for topic '{topic}': {e}")
-            return []
+            raise APIError(f"Error fetching resources for topic '{topic}': {e}")
 
     def generate_content(self, prompt, model='llama3-70b-8192'):
         try:
@@ -41,14 +42,7 @@ class LearningScheduler:
             )
             return response.choices[0].message.content
         except Exception as e:
-            print(f"Error generating content: {e}")
-            return "Error generating content. Please try again later."
-
-    def get_user_inputs(self):
-        goal = input("Enter your learning goal: ").strip()
-        duration = input("Enter the duration to achieve the goal (e.g., 3 months): ").strip()
-        style = input("Enter your preferred learning style (e.g., Interactive, Theoretical): ").strip()
-        return goal, duration, style
+            raise APIError(f"Error generating content: {e}")
 
     def create_schedule(self, goal, duration, style):
         prompt = self.prompt_template.format(goal=goal, duration=duration, style=style)
@@ -76,25 +70,12 @@ class LearningScheduler:
         schedule = f"{schedule}\n\n**Additional Resources**\n\n" + "\n".join(all_resources) + "\n\n" + motivation
         return schedule
 
-    def create_learning_plan(self):
+    def create_learning_plan(self, goal, duration, style):
         try:
-            goal, duration, style = self.get_user_inputs()
             schedule = self.create_schedule(goal, duration, style)
             topics = self.extract_topics(schedule)
             final_schedule = self.append_resources(schedule, topics)
             return final_schedule
         except Exception as e:
-            print(f"Error creating learning plan: {e}")
-            return "Error creating learning plan. Please try again later."
+            raise APIError(f"Error creating learning plan: {e}")
 
-# if __name__ == "__main__":
-#     exa_key = os.environ.get('EXA_API_KEY')
-#     groq_key = os.environ.get('GROQ_API_KEY')
-#     prompt_file = 'prompt_template.txt'
-
-#     if not exa_key or not groq_key:
-#         print("API keys for EXA and GROQ are required.")
-#     else:
-#         scheduler = LearningScheduler(exa_key, groq_key, prompt_file)
-#         learning_plan = scheduler.create_learning_plan()
-#         print(learning_plan)

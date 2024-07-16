@@ -5,7 +5,6 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.colors import blue, black, gray
 import re
-from content_generation import main
 
 # Register custom fonts
 pdfmetrics.registerFont(TTFont('Regular', 'AnonymousPro-Regular.ttf'))
@@ -121,13 +120,3 @@ class PDFDocument:
 
         self.add_page_number(page_num)
         self.canvas.save()
-
-# Usage
-filename = 'studycraft.pdf'
-title = 'Studycraft'
-content = main()
-
-pdf = PDFDocument(filename, title)
-pdf.create_pdf(content)
-
-print(f"PDF created successfully: {filename}")
