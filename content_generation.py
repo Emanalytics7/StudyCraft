@@ -2,139 +2,99 @@ import os
 from groq import Groq
 from exa_py import Exa
 
-# =========== <initialize api clients> ============
-exa = Exa(os.environ.get('EXA_API_KEY'))
-groq_client = Groq(api_key=os.environ.get('GROQ_API_KEY'))
+class LearningScheduler:
+    def __init__(self, exa_key, groq_key, prompt_file):
+        self.exa = Exa(exa_key)
+        self.groq_client = Groq(api_key=groq_key)
+        self.prompt_template = self.load_prompt_template(prompt_file)
 
-def fetch_response(topic):
-    response = exa.search(topic, num_results=1)
-    resources = []
-    for item in response.results:
-        resources.append({
-            "title": item.title,
-            "url": item.url,
-            "score": item.score,
-            "published_date": item.published_date,
-            "author": item.author
-        })
-    return resources
+    def load_prompt_template(self, prompt_file):
+        try:
+            with open(prompt_file, 'r') as file:
+                return file.read()
+        except Exception as e:
+            print(f"Error loading prompt template: {e}")
+            return ""
 
-def generate_content(prompt, model='llama3-70b-8192'):
-    """generate content using the LLama3."""
-    response = groq_client.chat.completions.create(
-        messages=[{"role": "user", "content": prompt}],
-        model=model        
-    )
-    return response.choices[0].message.content
+    def fetch_resources(self, topic):
+        try:
+            response = self.exa.search(topic, num_results=1)
+            resources = []
+            for item in response.results:
+                resources.append({
+                    "title": item.title,
+                    "url": item.url,
+                    "score": item.score,
+                    "published_date": item.published_date,
+                    "author": item.author
+                })
+            return resources
+        except Exception as e:
+            print(f"Error fetching resources for topic '{topic}': {e}")
+            return []
 
-def get_user_inputs():
-    goal = input("Enter your learning goal: ").strip()
-    duration = input("Enter the duration to achieve the goal (e.g., 3 months): ").strip()
-    style = input("Enter your preferred learning style (e.g., Interactive, Theoretical): ").strip()
-    return goal, duration, style
+    def generate_content(self, prompt, model='llama3-70b-8192'):
+        try:
+            response = self.groq_client.chat.completions.create(
+                messages=[{"role": "user", "content": prompt}],
+                model=model
+            )
+            return response.choices[0].message.content
+        except Exception as e:
+            print(f"Error generating content: {e}")
+            return "Error generating content. Please try again later."
 
-def create_learning_schedule(goal, duration, style):
-    prompt = f"""
-Dont write Heres is...
+    def get_user_inputs(self):
+        goal = input("Enter your learning goal: ").strip()
+        duration = input("Enter the duration to achieve the goal (e.g., 3 months): ").strip()
+        style = input("Enter your preferred learning style (e.g., Interactive, Theoretical): ").strip()
+        return goal, duration, style
 
-**Learning Schedule for**: {goal}
-**Duration**: {duration} months
-**Learning Style**: {style}
+    def create_schedule(self, goal, duration, style):
+        prompt = self.prompt_template.format(goal=goal, duration=duration, style=style)
+        schedule = self.generate_content(prompt)
+        return schedule
 
-    [Insert a relevant, motivational quote here that relates to learning or the specific goal, considering the {duration}-month journey]
+    def extract_topics(self, schedule):
+        topics = []
+        for line in schedule.split('\n'):
+            if "Main topics to cover" in line or "Topic" in line:
+                topic = line.split(":")[-1].strip()
+                if topic:
+                    topics.append(topic)
+        return topics
 
+    def append_resources(self, schedule, topics):
+        all_resources = []
+        for topic in topics:
+            fetched_resources = self.fetch_resources(f"latest resources related to {topic}")
+            if fetched_resources:
+                for resource in fetched_resources:
+                    all_resources.append(f"* {resource['url']}")
+        
+        motivation = 'Be brave enough to find the life you want and courageous enough to chase it. Then start over and love yourself the way you were always meant to!'
+        schedule = f"{schedule}\n\n**Additional Resources**\n\n" + "\n".join(all_resources) + "\n\n" + motivation
+        return schedule
 
-[Generate a detailed plan divided into {duration} equal parts, each representing a month. For each month, provide the following structure:]
+    def create_learning_plan(self):
+        try:
+            goal, duration, style = self.get_user_inputs()
+            schedule = self.create_schedule(goal, duration, style)
+            topics = self.extract_topics(schedule)
+            final_schedule = self.append_resources(schedule, topics)
+            return final_schedule
+        except Exception as e:
+            print(f"Error creating learning plan: {e}")
+            return "Error creating learning plan. Please try again later."
 
-Month [1-{duration}]:
+# if __name__ == "__main__":
+#     exa_key = os.environ.get('EXA_API_KEY')
+#     groq_key = os.environ.get('GROQ_API_KEY')
+#     prompt_file = 'prompt_template.txt'
 
-* Week 1:
-
-  + Main topics to cover:
-  + Practical exercises:
-
-* Week 2:
-
-  + Main topics to cover:
-  + Practical exercises:
-
-* Monthly Project:
-
-  - Description:
-  - Skills applied:
-  - Estimated time:
-
-* Monthly milestone:
-
-* Self-assessment task:
-
-[Repeat the above structure for each week in the {duration}-month period]
-
-**Key Milestones**:
-
-[List 3-5 major milestones spread across the {duration}-month period]
-
-**Advanced Topics (for latter part of the learning period):
-
-* Topic 1:
-  + Subtopics:
-  + Resources:
-* Topic 2:
-  + Subtopics:
-  + Resources:
-
-**Community and Support**:
-
-* Recommended forums or communities:
-* Potential mentorship opportunities:
-* Study group suggestions:
-
-**Assessment and Evaluation**:
-
-* Suggested methods for tracking progress:
-* Key performance indicators:
-* Final project or exam details:
-
-**Additional Tips**:
-
-* Time management strategies for a {duration}-month learning period:
-* Recommended pace and intensity based on the {duration}-month duration:
-* Strategies for maintaining motivation over {duration} months:
-
-"""
-    schedule = generate_content(prompt)
-    return schedule
-
-def extract_topics(schedule):
-    topics = []
-    for line in schedule.split('\n'):
-        if "Main topics to cover" in line or "Topic" in line:
-            topic = line.split(":")[-1].strip()
-            if topic:  
-                topics.append(topic)
-    return topics
-
-def resources(schedule, topics):
-    all_resources = []
-    for topic in topics:
-        fetched_resources = fetch_response(f" Give some latest resources related to {topic}")
-        if fetched_resources:
-            for resource in fetched_resources:
-                all_resources.append(f"* {resource['url']}")
-    
-    # flatten the list of resources and join them to the schedule
-    motivation = 'Be brave enough to find the life you want and courageous enough to chase it. Then start over and love yourself the way you were always meant to!'
-    schedule = f"{schedule}\n\n**Additional Resources**\n\n" + "\n".join(all_resources) + "\n\n" + motivation
-    return schedule
-
-def display_learning_schedule(schedule):
-    """Display the generated learning schedule."""
-    print(schedule)
-
-def main():
-    goal, duration, style = get_user_inputs()
-    schedule = create_learning_schedule(goal, duration, style)
-    topics = extract_topics(schedule)
-    schedule = resources(schedule, topics)
-    display_learning_schedule(schedule)
-    return schedule
+#     if not exa_key or not groq_key:
+#         print("API keys for EXA and GROQ are required.")
+#     else:
+#         scheduler = LearningScheduler(exa_key, groq_key, prompt_file)
+#         learning_plan = scheduler.create_learning_plan()
+#         print(learning_plan)
