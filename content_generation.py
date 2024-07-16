@@ -2,7 +2,7 @@ import os
 from groq import Groq
 from exa_py import Exa
 
-# Initialize API clients
+# =========== <initialize api clients> ============
 exa = Exa(os.environ.get('EXA_API_KEY'))
 groq_client = Groq(api_key=os.environ.get('GROQ_API_KEY'))
 
@@ -20,7 +20,7 @@ def fetch_response(topic):
     return resources
 
 def generate_content(prompt, model='llama3-70b-8192'):
-    """Generate content using the LLM."""
+    """generate content using the LLama3."""
     response = groq_client.chat.completions.create(
         messages=[{"role": "user", "content": prompt}],
         model=model        
@@ -28,14 +28,12 @@ def generate_content(prompt, model='llama3-70b-8192'):
     return response.choices[0].message.content
 
 def get_user_inputs():
-    """Gather user inputs for learning goal, duration, and style."""
     goal = input("Enter your learning goal: ").strip()
     duration = input("Enter the duration to achieve the goal (e.g., 3 months): ").strip()
     style = input("Enter your preferred learning style (e.g., Interactive, Theoretical): ").strip()
     return goal, duration, style
 
 def create_learning_schedule(goal, duration, style):
-    """Create a detailed learning schedule based on user inputs."""    
     prompt = f"""
 Dont write Heres is...
 
@@ -108,7 +106,6 @@ Month [1-{duration}]:
     return schedule
 
 def extract_topics(schedule):
-    """Extract main topics from the generated learning schedule."""
     topics = []
     for line in schedule.split('\n'):
         if "Main topics to cover" in line or "Topic" in line:
@@ -118,7 +115,6 @@ def extract_topics(schedule):
     return topics
 
 def resources(schedule, topics):
-    """Fetch relevant resources for the extracted topics."""
     all_resources = []
     for topic in topics:
         fetched_resources = fetch_response(f" Give some latest resources related to {topic}")
@@ -126,7 +122,7 @@ def resources(schedule, topics):
             for resource in fetched_resources:
                 all_resources.append(f"* {resource['url']}")
     
-    # Flatten the list of resources and join them to the schedule
+    # flatten the list of resources and join them to the schedule
     motivation = 'Be brave enough to find the life you want and courageous enough to chase it. Then start over and love yourself the way you were always meant to!'
     schedule = f"{schedule}\n\n**Additional Resources**\n\n" + "\n".join(all_resources) + "\n\n" + motivation
     return schedule
@@ -136,16 +132,9 @@ def display_learning_schedule(schedule):
     print(schedule)
 
 def main():
-    """Main function to orchestrate the learning schedule generation."""
     goal, duration, style = get_user_inputs()
-    
     schedule = create_learning_schedule(goal, duration, style)
-    
     topics = extract_topics(schedule)
     schedule = resources(schedule, topics)
-
     display_learning_schedule(schedule)
     return schedule
-
-if __name__ == "__main__":
-    main()
