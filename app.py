@@ -6,7 +6,7 @@ from datetime import datetime
 
 def main():
     # set page config
-    st.set_page_config(page_title="StudyCraft", page_icon="swan.png", layout="wide")
+    st.set_page_config(page_title="StudyCraft", page_icon="artifacts/swan.png", layout="wide")
 
     # custom css for light theme with gradient buttons
     st.markdown("""
@@ -59,7 +59,7 @@ def main():
 
     # ======<sidebar>=======
     with st.sidebar:
-        st.image("books.png", width=120)
+        st.image("artifacts/books.png", width=120)
         st.markdown("<p class='big-font'>Hey there, I'm Eman!</p>", unsafe_allow_html=True)
         st.write("Welcome to my StudyCraft app. Let's craft an awesome learning plan for you!")
         

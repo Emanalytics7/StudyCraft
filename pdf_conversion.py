@@ -7,9 +7,9 @@ from reportlab.lib.colors import blue, black, gray
 import re
 
 # Register custom fonts
-pdfmetrics.registerFont(TTFont('Regular', 'AnonymousPro-Regular.ttf'))
-pdfmetrics.registerFont(TTFont('Bold', 'AnonymousPro-Bold.ttf'))
-pdfmetrics.registerFont(TTFont('Italic', 'AnonymousPro-Italic.ttf'))
+pdfmetrics.registerFont(TTFont('Regular', 'fonts/AnonymousPro-Regular.ttf'))
+pdfmetrics.registerFont(TTFont('Bold', 'fonts/AnonymousPro-Bold.ttf'))
+pdfmetrics.registerFont(TTFont('Italic', 'fonts/AnonymousPro-Italic.ttf'))
 
 class PDFDocument:
     def __init__(self, filename, title):
