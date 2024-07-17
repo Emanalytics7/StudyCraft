@@ -116,6 +116,7 @@ dmypy.json
 .pyre/
 
 # dotenv
+
 .env
 
 # Streamlit
