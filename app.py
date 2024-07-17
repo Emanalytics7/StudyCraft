@@ -5,10 +5,10 @@ import os
 from datetime import datetime
 
 def main():
-    # Set page config
+    # set page config
     st.set_page_config(page_title="StudyCraft", page_icon="swan.png", layout="wide")
 
-    # Custom CSS for light theme with gradient buttons
+    # custom css for light theme with gradient buttons
     st.markdown("""
     <style>
     .main {
@@ -57,7 +57,7 @@ def main():
     </style>
     """, unsafe_allow_html=True)
 
-    # Sidebar
+    # ======<sidebar>=======
     with st.sidebar:
         st.image("books.png", width=120)
         st.markdown("<p class='big-font'>Hey there, I'm Eman!</p>", unsafe_allow_html=True)
@@ -70,7 +70,7 @@ def main():
         st.write("🟡 Match your learning style")
         st.write("🔵 Create a PDF for you!")
 
-    # Main content
+    # ========<main content>========
     st.title("☆Your Personalized StudyCrafter☆")
 
     st.write("Let's create an amazing study plan just for you. Fill in these details, and we'll work some magic! 🪄")
@@ -92,7 +92,7 @@ def main():
         if style == "Other":
             style = st.text_input("Interesting! How do you like to learn?", "")
 
-    # Check if all inputs are filled
+    # making sure all inputs are filled
     all_inputs_filled = goal and duration and style and goal != "I want to learn..." and (style != "Other" or (style == "Other" and style != "I learn best by..."))
 
     if all_inputs_filled:
@@ -105,7 +105,7 @@ def main():
         else:
             generate_plan_with_api_keys(goal, duration, style)
 
-    # Footer
+    # =====<footer>======
     st.markdown("---")
     st.write("Made with ❤️ by Eman | © 2024 StudyCraft")
 

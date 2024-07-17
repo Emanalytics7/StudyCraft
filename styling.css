@@ -1,7 +1,0 @@
-.stButton>button:hover {
-    background: linear-gradient(45deg, #45a049, #4CAF50);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-.stDownloadButton>button {
-    background: linear-gradient(45deg, #3498db, #2980b9);
-}

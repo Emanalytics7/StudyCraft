@@ -120,3 +120,4 @@ class PDFDocument:
 
         self.add_page_number(page_num)
         self.canvas.save()
+
