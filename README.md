@@ -105,7 +105,7 @@ I'd love your help to make StudyCraft even better!
 This project is under the MIT License. Check out the LICENSE file for the legal details.
 
 *If you found StudyCraft helpful & amazing, please give it a star! ⭐
-This was a fun project I did just for fun, and I hope you like it😉* 
+This was a fun project I did just for fun, and I hope you like it* 
 
 ---
 
