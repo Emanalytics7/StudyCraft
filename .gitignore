@@ -1,133 +1,109 @@
-# Byte-compiled / optimized / DLL files
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependency directories
+node_modules/
+jspm_packages/
+bower_components/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output directories
+dist/
+build/
+out/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE and editor specific files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Python files
 __pycache__/
 *.py[cod]
-*$py.class
-
-# C extensions
-*.so
-
-# Distribution / packaging
-.Python
+*.pyo
+*.pyd
+*.pdb
+*.egg
+*.egg-info/
+.eggs/
+*.whl
+*.virtualenv
+*.venv
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
 
-# Install packages
-*.egg
-*.egg-info/
-dist/
-build/
-eggs/
-parts/
-var/
-wheels/
-share/python-wheels/
-*.manifest
-*.spec
+# Java files
+*.class
+*.jar
+*.war
+*.ear
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+# Ruby files
+*.gem
+*.rbc
+.bundle/
+.config/
+.yardoc
+_rspec
+.rspec_status
+.ruby-version
+.ruby-gemset
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
+# JavaScript files
+*.min.js
+*.map
 
-# Translations
-*.mo
-*.pot
-
-# Django stuff
+# Miscellaneous
+*.swp
+*.lock
+*.bak
+*.tmp
+*.temp
+*.old
+*.orig
+*.rej
+*.swo
 *.log
-local_settings.py
-db.sqlite3
+*.gz
+*.zip
 
-# Flask stuff
-instance/
-.webassets-cache
+# Application-specific files
+# Add here files that are specific to your application or framework
+# E.g., for Django:
+# *.sqlite3
+# *.pot
+# *.mo
 
-# Scrapy stuff
-.scrapy
+# Coverage files
+coverage/
+*.lcov
+.nyc_output/
 
-# Sphinx documentation
-docs/_build/
-build/docs
-
-# PyBuilder
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow
-__pypackages__/
-
-# Celery stuff
-celerybeat-schedule.*
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
+# Environment variables
 .env
-.env.*
-.venv
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# dotenv
-
-.env
-
-# Streamlit
-streamlit/
-
-# VS Code
-.vscode/
-
-# MacOS
-.DS_Store
-
-# Windows
-Thumbs.db
-ehthumbs.db
+.env.local
+.env.*.local
+.envrc

@@ -78,4 +78,3 @@ class LearningScheduler:
             return final_schedule
         except Exception as e:
             raise APIError(f"Error creating learning plan: {e}")
-
