@@ -1,36 +1,37 @@
-# StudyCraft <img src="https://github.com/Emanalytics7/StudyCraft/blob/main/artifacts/swan.png" alt="Logo" width="100"/>
+# StudyCraft
 
-## Overview
+<p align="center">
+  <img src="https://github.com/Emanalytics7/StudyCraft/blob/main/artifacts/swan.png" alt="StudyCraft Logo" width="150"/>
+</p>
+
+<h2 align="center">Your Personal AI Study Buddy</h2>
+
+<p align="center">
+  👉 <a href="https://study-craft.streamlit.app/">Try StudyCraft Now!</a>
+
+## What is StudyCraft?
 
 StudyCraft is a web application that creates a personalized learning schedule of your preferred style and generates a comprehensive PDF of the plan.
 
-Try yourself here 👉   *[StudyCraft](https://study-craft.streamlit.app/)*
-
-Demo: 
+### See StudyCraft in Action
 
 https://github.com/user-attachments/assets/b950d6c2-04ec-42dc-8c1d-38804115e91f
 
+
 ## Features
 
-- **Personalized Study Plans**: Tailored to individual goals and learning styles.
-- **AI-Powered Content Generation**: Uses LLM for creating study material.
-- **Resource Integration**: Extracts and includes useful resources.
-- **PDF Generation**: Compiles plans into a downloadable PDF.
+- **Custom Study Plans**: Tailored just for you and your learning style
+- **AI-Powered Content**: Uses smart AI to create study materials
+- **Resource Finder**: Automatically finds and includes helpful resources
+- **PDF Magic**: Turns your study plan into a neat, downloadable PDF
 
-## Technologies Used
-* **Groq API**:
-Used for interacting with Llama3-70b to generate custom study content.
-*[Groq API](https://console.groq.com/)*
+## Tech Stack
 
-* **Exa API**:
-Extracts and integrates relevant resources from the internet.
-*[Exa API](https://exa.ai/)*
-
-* **Google Fonts** :
-Uses Google Fonts for styling the generated PDFs. The current font is "Anonymous Pro."
+- **[Groq API](https://console.groq.com/)**: Powers our smart AI brain (Llama3-70b)
+- **[Exa API](https://exa.ai/)**: Helps find the best study resources
+- **Google Fonts**: Makes your study plan look cool (i used "Anonymous Pro")
 
 ## File Structure 
-
 ```plaintext
 StudyCraft/
 │
@@ -51,33 +52,68 @@ StudyCraft/
 │
 └── prompt_template.txt      # Template for AI content generation prompts
 ```
-## Installation
 
-### Prerequisites
-- Python 3.10+
-- Groq & Exa API credentials [optional in case rate limit occured]
+## Getting Started
 
-## Steps
-Clone the repository:
-```bash
-git clone https://github.com/Emanalytics7/StudyCraft.git
-cd StudyCraft
-```
-### Install the dependencies:
-```bash
+### What You'll Need
+
+- Python 3.10 or newer
+- Groq & Exa API keys (optional, in case my apis dont work!)
+
+### Setup Steps
+
+1. **Grab the Code**
+   ```bash
+   git clone https://github.com/Emanalytics7/StudyCraft.git
+   cd StudyCraft
+   ```
+2. **Install the Dependencies**
+  ```bash
 pip install -r requirements.txt
-```
-Set up your API credentials in a .env file.
+  ```
+3. **Set Up Your API Keys**
+   Create a .env file and add your API keys (if you have them)
 
-### Run the application:
-
-```bash
+4. **Launch StudyCraft**
+  ```bash
 streamlit run app.py
-```
-## Usage
-- Open the application in your browser.
-- Enter your study goals, duration, and preferred learning style.
-- Generate and download your personalized study PDF.
+  ```
 
+## How to Use
+- Open StudyCraft in your browser
+- Tell it your study goals and how you like to learn
+- Click to generate your personalized study plan
+- Download your new PDF and start learning!
 
+## Contribute
+I'd love your help to make StudyCraft even better!
+
+## How to Join In
+- Fork the project
+- Create your feature branch `(git checkout -b feature/AmazingFeature)`
+- Commit your changes `(git commit -m 'Add some AmazingFeature')`
+- Push to the branch `(git push origin feature/AmazingFeature)`
+- Open a Pull Request
+
+## Ideas for Improvement
+- Progress trackers and charts
+- More advanced AI study content
+- Links to additional learning resources
+- Customizable PDF themes and layouts
+
+## License
+This project is under the MIT License. Check out the LICENSE file for the legal details.
+
+*If you found StudyCraft helpful & amazing, please give it a star! ⭐
+This was a fun project I did just for fun, and I hope you like it😉* 
+
+---
+
+<p align="center">
+  Made with ❤️ by Eman | © 2024 StudyCraft
+</p>
+<p align="center">
+  <a href="https://www.linkedin.com/in/eman-nisar/">LinkedIn</a> •
+  <a href="mailto:emanisar3@gmail.com">Email</a>
+</p>
 
