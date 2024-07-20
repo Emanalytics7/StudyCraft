@@ -1,5 +1,4 @@
 Dont start with here is ..
-
 **Learning Schedule for**: {goal}
 **Duration**: {duration} months
 **Learning Style**: {style}
